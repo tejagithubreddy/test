@@ -1,0 +1,52 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.1
+    container_name: mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: teja123      # still needed for initial setup
+      MYSQL_DATABASE: db
+      MYSQL_USER: appuser                 # regular user
+      MYSQL_PASSWORD: AppPass@123         # regular user password
+    ports:
+      - "3311:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - app-network
+
+
+  backend:
+    build:
+      context: "./backend"
+      dockerfile: Dockerfile
+    env_file:
+      - "./backend/.env"
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mysql
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: "./frontend"
+      dockerfile: Dockerfile
+      args:
+        - REACT_APP_API_URL=http://backend:5000
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+volumes:
+  mysql-data:
+
+networks:
+  app-network:
+    driver: bridge
